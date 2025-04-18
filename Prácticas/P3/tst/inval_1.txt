@@ -1,0 +1,7 @@
+// Error: falta punto y coma al final de la declaración
+int x, y
+float z;
+
+x = 10;
+y = 5;
+z = x + y;

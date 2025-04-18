@@ -1,80 +1,149 @@
-<p  align="center">
-  <img  width="200"  src="https://www.fciencias.unam.mx/sites/default/files/logoFC_2.png"  alt="">  <br>Compiladores  2025-2 <br>
-  Práctica 2: Analizadores léxicos con Lex (PLY) <br> Profesora: Ariel Adara Mercado Martínez
-</p>
+# Analizador Sintáctico de Descenso Recursivo
 
-## Analizador sintáctico de descenso recursivo
-### Objetivo:
-Que el alumno se familiarice con el análisis sintáctico de descenso recursivo y construya un Analizador de este tipo reforzando sus conocimientos mediante el uso de _PLY/Python_. 
+## Análisis de la Gramática
 
-### Introducción
-El análisis sintáctico es una de las fases fundamentales en la construcción de un compilador, siendo la segunda fase del proceso de compilación. Su principal objetivo es verificar que la secuencia de _tokens_ generada por el analizador léxico cumpla con las reglas gramaticales de un lenguaje de programación, es decir, que el flujo de tokens pueda ser estructurado de acuerdo con una gramática previamente definida. A través de esta fase, se construye una representación jerárquica del programa fuente, que típicamente se presenta en forma de un árbol de sintaxis.
+### 1. Conjuntos N, Σ y símbolo inicial S
 
-El análisis sintáctico descendente es una técnica en la que se construye el árbol de sintaxis de arriba hacia abajo, comenzando desde la raíz (el símbolo de inicio) hasta las hojas (los lexemas de entrada). Esto es equivalente a encontrar una serie de derivaciones desde el símbolo inicial _S_ que nos permita generar una cadena _w_ que recibimos como entrada para analizar sintácticamente. 
+**N (No terminales):**
+- programa
+- declaraciones
+- declaracion
+- tipo
+- lista_var
+- sentencias
+- sentencia
+- expresion
 
-Existen dos tipos principales de análisis sintáctico descendente:
-- Recursivo: Utiliza recursión en las funciones para ir desglosando las producciones de la gramática de manera directa.
-- LL(k): Un tipo de análisis más generalizado que se basa en una técnica de análisis de k símbolos de entrada por adelantado para tomar decisiones de análisis.
+**Σ (Terminales):**
+- int
+- float
+- identificador
+- numero
+- ;
+- ,
+- =
+- if
+- else
+- while
+- (
+- )
+- +
+- -
+- *
+- /
 
+**S (Símbolo inicial):** programa
 
-### Estructura del directorio
-```c++
-P3
-├── README.md
-└── src
-    └── main
-        ├── __init__.py
-        ├── analisis
-        │   ├── __init__.py
-        │   ├── lexico.py // Clase Lexer para la impl. del An. Léxico
-        │   └── sintactico.py // Clase Parser para la impl. del An. Sintáctico
-        ├── componente
-        │   ├── __init__.py
-        │   ├── clase_lexica.py // Enum que contiene todas las clases léxicas del lenguaje a reconocer
-        │   └── componente_lexico.py // Estructura de datos que conforma un token. Una clase léxica y su lexema asociado.
-        └── main.py // script con el método main
-```
+### 2. Eliminación de ambigüedad
 
-### Uso
+La gramática presenta ambigüedad en las expresiones aritméticas, ya que no define la precedencia entre operadores. Por ejemplo, en una expresión como "a + b * c", no está claro si debe interpretarse como "(a + b) * c" o "a + (b * c)".
 
-#### Compilacion
-
-```bash
-$ jflex src/main/jflex/Lexer.flex
-$ javac --source-path src -d build src/main/jflex/Main.java
-```
-
-#### Ejecucion
-
-```bash
-$ java -cp build main.java.Main tst/prueba.txt  
-```
-
-#### Ejercicios
-Para la gramática G = ( N, Σ, P, S), descrita por las siguientes producciones: 
-> P = {
->> programa → declaraciones sentencias <br>
->> declaraciones → declaraciones declaracion | declaracion <br>
->> declaracion → tipo lista-var **;** <br>
->> tipo → **int** | **float** <br>
->> lista_var → lista_var **,** _**identificador**_ | _**identificador**_ <br>
->> sentencias → sentencias sentencia | sentencia <br>
->> sentencia → _**identificador**_ **=** expresion **;** | **if** **(** expresion **)** sentencias **else** sentencias | **while** **(** expresión **)** sentencias <br>
->> expresion → expresion **+** expresion | expresion **-** expresion | expresion __\*__ expresion | expresion **/** expresión | _**identificador**_ | **_numero_** <br>
->> expresion → **(** expresion **)** <br>
-}
+Para eliminar esta ambigüedad, redefino las expresiones con diferentes niveles de precedencia:
+expresion → expresion_suma
+expresion_suma → expresion_suma + expresion_mult | expresion_suma - expresion_mult | expresion_mult
+expresion_mult → expresion_mult * expresion_unaria | expresion_mult / expresion_unaria | expresion_unaria
+expresion_unaria → identificador | numero | ( expresion )
 
 
-1. Determinar en un archivo Readme, en formato Markdown (.md) o LaTeX (.tex) -- con su respectivo PDF, para este último -- , los conjuntos _N_, _Σ_ y el símbolo inicial _S_.  (0.5 pts.)
-2. Mostrar en el archivo el proceso de eliminación de ambigüedad o justificar, en caso de no ser necesario. (1 pts.).
-3. Mostrar en el archivo el proceso de eliminación de la recursividad izquierda o justificar, en caso de no ser necesario. (1 pts.)
-4. Mostrar en el archivo el proceso de factorización izquierda o justificar, en caso de no ser necesario. (1 pts.)
-5. Mostrar en el archivo los nuevos conjuntos _N_ y _P_. (0.5 pts.)
-6. Modificar el main.py para que nuestro programa sea capaz de recibir archivos y no sólo cadenas. (2 pts.)
-7. Implementar el Analizador Sintáctico (_analisis/sintactico.py_) de descenso recursivo, documentando las funciones de cada No-Terminal, de forma que el programa descrito en el archivo _tst/prueba.txt_ sea reconocido y aceptado por el analizador resultante. (4 pts.)
+Esto establece que la multiplicación y división tienen mayor precedencia que la suma y resta, lo cual es el comportamiento esperado en la mayoría de los lenguajes de programación.
 
----
-#### Extras
+### 3. Eliminación de recursividad izquierda
 
-9. Documentar TODO el código. (0.25pts)
-10. Proponer 4 archivos de prueba nuevos, 2 válidos y 2 inválidos. (0.25pts)
+La gramática tiene recursividad izquierda en varias producciones:
+
+1. `declaraciones → declaraciones declaracion | declaracion`
+2. `lista_var → lista_var , identificador | identificador`
+3. `sentencias → sentencias sentencia | sentencia`
+4. Las expresiones que acabamos de redefinir
+
+Para eliminar la recursividad izquierda, aplico la siguiente transformación:
+
+Para una producción de la forma A → Aα | β, la transformación es:
+A → βA'
+A' → αA' | ε
+
+Aplicando esto a nuestras producciones:
+
+1. Para `declaraciones`:
+declaraciones → declaracion declaraciones_prima
+declaraciones_prima → declaracion declaraciones_prima | ε
+
+
+2. Para `lista_var`:
+lista_var → identificador lista_var_prima
+lista_var_prima → , identificador lista_var_prima | ε
+
+
+3. Para `sentencias`:
+sentencias → sentencia sentencias_prima
+sentencias_prima → sentencia sentencias_prima | ε
+
+
+4. Para las expresiones:
+expresion → expresion_mult expresion_suma_prima
+expresion_suma_prima → + expresion_mult expresion_suma_prima | - expresion_mult expresion_suma_prima | ε
+expresion_mult → expresion_unaria expresion_mult_prima
+expresion_mult_prima → * expresion_unaria expresion_mult_prima | / expresion_unaria expresion_mult_prima | ε
+expresion_unaria → identificador | numero | ( expresion )
+
+
+### 4. Factorización izquierda
+
+Después de analizar la gramática resultante de las transformaciones anteriores, no encuentro producciones que requieran factorización izquierda, ya que no hay producciones con prefijos comunes.
+
+La factorización izquierda se aplica cuando tenemos producciones de la forma:
+A → αβ₁ | αβ₂
+
+Que se transforman en:
+A → αA'
+A' → β₁ | β₂
+
+En nuestra gramática transformada, no hay producciones que tengan esta forma, por lo que no es necesario aplicar factorización izquierda.
+
+### 5. Gramática resultante
+
+Después de aplicar las transformaciones para eliminar la ambigüedad y la recursividad izquierda, la gramática queda así:
+
+**N (No terminales):**
+- programa
+- declaraciones
+- declaraciones_prima
+- declaracion
+- tipo
+- lista_var
+- lista_var_prima
+- sentencias
+- sentencias_prima
+- sentencia
+- expresion
+- expresion_suma_prima
+- expresion_mult
+- expresion_mult_prima
+- expresion_unaria
+
+**P (Producciones):**
+programa → declaraciones sentencias
+declaraciones → declaracion declaraciones_prima
+declaraciones_prima → declaracion declaraciones_prima | ε
+declaracion → tipo lista_var ;
+tipo → int | float
+lista_var → identificador lista_var_prima
+lista_var_prima → , identificador lista_var_prima | ε
+sentencias → sentencia sentencias_prima
+sentencias_prima → sentencia sentencias_prima | ε
+sentencia → identificador = expresion ; | if ( expresion ) sentencias else sentencias | while ( expresion ) sentencias
+expresion → expresion_mult expresion_suma_prima
+expresion_suma_prima → + expresion_mult expresion_suma_prima | - expresion_mult expresion_suma_prima | ε
+expresion_mult → expresion_unaria expresion_mult_prima
+expresion_mult_prima → * expresion_unaria expresion_mult_prima | / expresion_unaria expresion_mult_prima | ε
+expresion_unaria → identificador | numero | ( expresion )
+
+
+Esta gramática ya no tiene ambigüedad ni recursividad izquierda, y está lista para ser implementada en un analizador sintáctico de descenso recursivo.
+Este README.md contiene el análisis completo de la gramática, incluyendo:
+
+Los conjuntos N, Σ y el símbolo inicial S
+El proceso de eliminación de ambigüedad
+El proceso de eliminación de recursividad izquierda
+La justificación de por qué no es necesaria la factorización izquierda
+Los nuevos conjuntos N y P resultantes

@@ -8,8 +8,6 @@ class ComponenteLexico(): # también llamado token
         self.clase = clase
         self.lexema = lexema
 
-
     def __str__(self):
-        # FIXME: cambiar la representación en cadena del objeto 
-        return str(self)
-    
+        # Arreglamos la representación en cadena
+        return f"Token: {self.clase.name} - Lexema: '{self.lexema}'"
